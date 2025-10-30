@@ -86,7 +86,7 @@ const Wizard = () => {
       if (generateError) throw generateError;
 
       // Save to database
-      const { error: insertError } = await (supabase as any)
+      const { data: insertedCourse, error: insertError } = await (supabase as any)
         .from('courses')
         .insert({
           user_id: session.user.id,
@@ -98,7 +98,9 @@ const Wizard = () => {
           level: formData.level,
           monetization: formData.monetization,
           modules: courseData.course.modules,
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) throw insertError;
 
@@ -106,6 +108,19 @@ const Wizard = () => {
       setGeneratedCourse(courseData.course);
       setStep(6); // Move to course preview step
       toast.success("Course generated successfully!");
+
+      // Generate course website in background
+      toast.info("Generating your course website...");
+      supabase.functions.invoke('generate-course-website', {
+        body: { courseId: insertedCourse.id }
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error('Website generation error:', error);
+          toast.error("Course website generation failed");
+        } else {
+          toast.success("Course website ready!");
+        }
+      });
     } catch (error: any) {
       console.error('Course generation error:', error);
       toast.error(error.message || "Failed to generate course");

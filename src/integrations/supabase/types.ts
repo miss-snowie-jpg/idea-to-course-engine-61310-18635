@@ -14,7 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      courses: {
+        Row: {
+          audience: string
+          created_at: string
+          description: string | null
+          id: string
+          level: string
+          modules: Json | null
+          monetization: string
+          style: string
+          title: string
+          topic: string
+          updated_at: string
+          user_id: string
+          website_code: Json | null
+          website_status: string | null
+        }
+        Insert: {
+          audience: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          level: string
+          modules?: Json | null
+          monetization: string
+          style: string
+          title: string
+          topic: string
+          updated_at?: string
+          user_id: string
+          website_code?: Json | null
+          website_status?: string | null
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          level?: string
+          modules?: Json | null
+          monetization?: string
+          style?: string
+          title?: string
+          topic?: string
+          updated_at?: string
+          user_id?: string
+          website_code?: Json | null
+          website_status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
