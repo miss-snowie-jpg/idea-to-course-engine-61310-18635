@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Check, Sparkles, Zap, DollarSign, BarChart } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -77,10 +78,21 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Header with Theme Toggle */}
+      <header className="absolute top-0 left-0 right-0 z-10 border-b border-border/50 bg-card/30 backdrop-blur-sm">
+        <div className="container mx-auto flex items-center justify-between px-4 py-4">
+          <div className="flex items-center gap-2 text-xl font-bold">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">Nyra</span>
+          </div>
+          <ThemeToggle />
+        </div>
+      </header>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden">
+      <section className="relative overflow-hidden pt-16">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-background to-accent/20" />
-        <div className="absolute inset-0" style={{ boxShadow: "var(--glow-primary)" }} />
+        <div className="absolute inset-0" style={{ boxShadow: "var(--shadow-glow)" }} />
         
         <div className="container relative mx-auto px-4 py-20 md:py-32">
           <div className="mx-auto max-w-4xl text-center">

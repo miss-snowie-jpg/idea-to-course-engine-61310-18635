@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Sparkles, ArrowLeft, ArrowRight, ExternalLink } from "lucide-react";
+import { Sparkles, ArrowLeft, ArrowRight } from "lucide-react";
 import { toast } from "sonner";
+import { PaymentMethodDialog } from "@/components/PaymentMethodDialog";
 
 interface CourseModule {
   title: string;
@@ -28,6 +28,7 @@ const Wizard = () => {
   const [loading, setLoading] = useState(false);
   const [generatedCourse, setGeneratedCourse] = useState<GeneratedCourse | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
   const [formData, setFormData] = useState({
     topic: "",
     audience: "",
@@ -128,6 +129,50 @@ const Wizard = () => {
     }
   };
 
+  const handlePaymentSelection = async (method: "paypal" | "telebirr") => {
+    setPaymentLoading(true);
+    try {
+      if (method === "paypal") {
+        const { data, error } = await supabase.functions.invoke('paypal-payment', {
+          body: { 
+            amount: 40, 
+            currency: "USD",
+            courseId: generatedCourse?.title 
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data.approvalUrl) {
+          window.open(data.approvalUrl, '_blank');
+          toast.success("Redirecting to PayPal...");
+        }
+      } else {
+        const { data, error } = await supabase.functions.invoke('telebirr-payment', {
+          body: { 
+            amount: 1600,
+            phoneNumber: "+251911234567", // In production, collect from user
+            courseId: generatedCourse?.title 
+          }
+        });
+        
+        if (error) throw error;
+        
+        if (data.paymentUrl) {
+          window.open(data.paymentUrl, '_blank');
+          toast.success("Redirecting to Telebirr...");
+        }
+      }
+      
+      setShowPaymentDialog(false);
+    } catch (error: any) {
+      console.error('Payment error:', error);
+      toast.error(error.message || "Payment failed");
+    } finally {
+      setPaymentLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -204,9 +249,10 @@ const Wizard = () => {
                   size="lg"
                   className="w-full bg-gradient-to-r from-accent to-primary hover:opacity-90 transition-opacity text-lg"
                   onClick={() => setShowPaymentDialog(true)}
+                  disabled={paymentLoading}
                 >
-                  <ExternalLink className="mr-2 h-5 w-5" />
-                  Link to Site
+                  <Sparkles className="mr-2 h-5 w-5" />
+                  {paymentLoading ? "Processing..." : "Publish Course"}
                 </Button>
                 <Button
                   variant="outline"
@@ -332,59 +378,12 @@ const Wizard = () => {
         </Card>
       </main>
 
-      {/* Payment Dialog */}
-      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-2xl">Upgrade to Publish</DialogTitle>
-            <DialogDescription className="text-base">
-              Your course is ready! To publish it and get your custom course website, please upgrade to a paid plan.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="rounded-lg bg-gradient-to-br from-primary/10 to-accent/10 p-4">
-              <h4 className="font-semibold mb-2">What you'll get:</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="text-accent">✓</span>
-                  <span>Custom course website with your branding</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent">✓</span>
-                  <span>Accept payments from students</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent">✓</span>
-                  <span>Analytics and growth insights</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-accent">✓</span>
-                  <span>Unlimited course updates</span>
-                </li>
-              </ul>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Button 
-                className="w-full bg-gradient-to-r from-primary to-accent"
-                onClick={() => {
-                  setShowPaymentDialog(false);
-                  toast.success("Redirecting to payment...", {
-                    description: "Choose your plan and start earning",
-                  });
-                }}
-              >
-                View Pricing Plans
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => setShowPaymentDialog(false)}
-              >
-                Maybe Later
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Payment Method Selection */}
+      <PaymentMethodDialog
+        open={showPaymentDialog}
+        onOpenChange={setShowPaymentDialog}
+        onSelectPayment={handlePaymentSelection}
+      />
     </div>
   );
 };
