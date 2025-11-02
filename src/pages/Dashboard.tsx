@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Sparkles, Plus, BookOpen, TrendingUp, DollarSign, LogOut } from "lucide-react";
+import { Sparkles, Plus, BookOpen, TrendingUp, DollarSign, LogOut, Video } from "lucide-react";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -104,25 +104,44 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Create Course CTA */}
-        <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8 text-center">
-          <div className="mx-auto max-w-2xl">
-            <Sparkles className="mx-auto mb-4 h-12 w-12 text-primary" />
-            <h2 className="mb-4 text-3xl font-bold">Create Your First Course</h2>
-            <p className="mb-6 text-lg text-muted-foreground">
-              Let Nyra guide you through creating an engaging, professional course in minutes. 
-              No technical skills required—just your expertise.
-            </p>
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-primary to-accent text-lg"
-              onClick={() => navigate('/wizard')}
-            >
-              <Plus className="mr-2 h-5 w-5" />
-              Start Course Wizard
-            </Button>
-          </div>
-        </Card>
+        {/* Create Content CTAs */}
+        <div className="grid gap-6 md:grid-cols-2 mb-6">
+          <Card className="border-primary/30 bg-gradient-to-br from-primary/10 via-card to-accent/10 p-8 text-center">
+            <div className="mx-auto max-w-xl">
+              <Sparkles className="mx-auto mb-4 h-12 w-12 text-primary" />
+              <h2 className="mb-4 text-2xl font-bold">Create Course</h2>
+              <p className="mb-6 text-muted-foreground">
+                Let Nyra guide you through creating an engaging, professional course in minutes.
+              </p>
+              <Button 
+                size="lg" 
+                className="w-full bg-gradient-to-r from-primary to-accent"
+                onClick={() => navigate('/wizard')}
+              >
+                <Plus className="mr-2 h-5 w-5" />
+                Start Course Wizard
+              </Button>
+            </div>
+          </Card>
+
+          <Card className="border-accent/30 bg-gradient-to-br from-accent/10 via-card to-primary/10 p-8 text-center">
+            <div className="mx-auto max-w-xl">
+              <Video className="mx-auto mb-4 h-12 w-12 text-accent" />
+              <h2 className="mb-4 text-2xl font-bold">Generate Video</h2>
+              <p className="mb-6 text-muted-foreground">
+                Create professional videos with AI to enhance your courses.
+              </p>
+              <Button 
+                size="lg" 
+                className="w-full bg-gradient-to-r from-accent to-primary"
+                onClick={() => navigate('/video-generator')}
+              >
+                <Video className="mr-2 h-5 w-5" />
+                Video Generator
+              </Button>
+            </div>
+          </Card>
+        </div>
 
         {/* Trial Notice */}
         <div className="mt-6 rounded-lg border border-accent/30 bg-accent/5 p-4 text-center">
