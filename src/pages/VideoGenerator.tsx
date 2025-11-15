@@ -36,19 +36,58 @@ const VideoGenerator = () => {
     }
 
     setLoading(true);
+    setVideoUrl(null);
+    
     try {
-      // Placeholder for video generation API call
-      toast.info("Video generation feature coming soon!");
+      toast.info("Starting video generation... This may take a few minutes.");
       
-      // This is where you would call your video generation API
-      // const { data, error } = await supabase.functions.invoke('generate-video', {
-      //   body: formData
-      // });
+      // Start video generation
+      const { data: startData, error: startError } = await supabase.functions.invoke('generate-video', {
+        body: formData
+      });
+
+      if (startError) throw startError;
+      if (!startData?.predictionId) throw new Error("Failed to start video generation");
+
+      const predictionId = startData.predictionId;
+      
+      // Poll for completion
+      let attempts = 0;
+      const maxAttempts = 60; // 5 minutes max
+      
+      const checkStatus = async (): Promise<void> => {
+        const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-video', {
+          body: { predictionId }
+        });
+
+        if (statusError) throw statusError;
+
+        console.log('Video status:', statusData);
+
+        if (statusData.status === 'succeeded') {
+          const videoUrl = statusData.output?.[0] || statusData.output;
+          if (videoUrl) {
+            setVideoUrl(videoUrl);
+            toast.success("Video generated successfully!");
+            setLoading(false);
+          } else {
+            throw new Error("No video URL in response");
+          }
+        } else if (statusData.status === 'failed') {
+          throw new Error(statusData.error || "Video generation failed");
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(checkStatus, 5000); // Check every 5 seconds
+        } else {
+          throw new Error("Video generation timed out");
+        }
+      };
+
+      await checkStatus();
       
     } catch (error: any) {
       console.error('Video generation error:', error);
       toast.error(error.message || "Failed to generate video");
-    } finally {
       setLoading(false);
     }
   };
