@@ -43,13 +43,13 @@ const VideoGenerator = () => {
       
       // Start video generation
       const { data: startData, error: startError } = await supabase.functions.invoke('generate-video', {
-        body: formData
+        body: { prompt: formData.prompt }
       });
 
       if (startError) throw startError;
-      if (!startData?.predictionId) throw new Error("Failed to start video generation");
+      if (!startData?.videoId) throw new Error("Failed to start video generation");
 
-      const predictionId = startData.predictionId;
+      const videoId = startData.videoId;
       
       // Poll for completion
       let attempts = 0;
@@ -57,15 +57,15 @@ const VideoGenerator = () => {
       
       const checkStatus = async (): Promise<void> => {
         const { data: statusData, error: statusError } = await supabase.functions.invoke('generate-video', {
-          body: { predictionId }
+          body: { videoId }
         });
 
         if (statusError) throw statusError;
 
         console.log('Video status:', statusData);
 
-        if (statusData.status === 'succeeded') {
-          const videoUrl = statusData.output?.[0] || statusData.output;
+        if (statusData.status === 'completed') {
+          const videoUrl = statusData.video_url;
           if (videoUrl) {
             setVideoUrl(videoUrl);
             toast.success("Video generated successfully!");
@@ -73,7 +73,7 @@ const VideoGenerator = () => {
           } else {
             throw new Error("No video URL in response");
           }
-        } else if (statusData.status === 'failed') {
+        } else if (statusData.status === 'failed' || statusData.error) {
           throw new Error(statusData.error || "Video generation failed");
         } else if (attempts < maxAttempts) {
           attempts++;

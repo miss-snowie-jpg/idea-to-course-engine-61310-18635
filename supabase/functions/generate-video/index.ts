@@ -1,5 +1,4 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
-import Replicate from "https://esm.sh/replicate@0.25.2"
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,23 +11,37 @@ serve(async (req) => {
   }
 
   try {
-    const REPLICATE_API_KEY = Deno.env.get('REPLICATE_API_KEY')
-    if (!REPLICATE_API_KEY) {
-      throw new Error('REPLICATE_API_KEY is not set')
+    const HEYGEN_API_KEY = Deno.env.get('HEYGEN_API_KEY')
+    if (!HEYGEN_API_KEY) {
+      throw new Error('HEYGEN_API_KEY is not set')
     }
-
-    const replicate = new Replicate({
-      auth: REPLICATE_API_KEY,
-    })
 
     const body = await req.json()
 
     // If it's a status check request
-    if (body.predictionId) {
-      console.log("Checking status for prediction:", body.predictionId)
-      const prediction = await replicate.predictions.get(body.predictionId)
-      console.log("Status check response:", prediction)
-      return new Response(JSON.stringify(prediction), {
+    if (body.videoId) {
+      console.log("Checking status for video:", body.videoId)
+      const statusResponse = await fetch(`https://api.heygen.com/v1/video_status.get?video_id=${body.videoId}`, {
+        method: 'GET',
+        headers: {
+          'X-Api-Key': HEYGEN_API_KEY,
+        },
+      })
+
+      if (!statusResponse.ok) {
+        const errorText = await statusResponse.text()
+        console.error("Status check error:", statusResponse.status, errorText)
+        throw new Error(`Failed to check video status: ${statusResponse.status}`)
+      }
+
+      const statusData = await statusResponse.json()
+      console.log("Status check response:", statusData)
+      
+      return new Response(JSON.stringify({
+        status: statusData.data?.status || 'unknown',
+        video_url: statusData.data?.video_url,
+        error: statusData.data?.error
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
@@ -47,24 +60,52 @@ serve(async (req) => {
 
     console.log("Generating video with prompt:", body.prompt)
     
-    // Using stable-video-diffusion-img2vid for video generation
-    // This model generates videos from text descriptions
-    const prediction = await replicate.predictions.create({
-      version: "3f0457e4619daac51203dedb472816fd4af51f3149867e4676a53f1ff87c3cf8",
-      input: {
-        prompt: body.prompt,
-        fps: 6,
-        num_frames: Math.min(parseInt(body.duration) || 30, 48) * 6 / 5, // Convert seconds to frames
-        sizing_strategy: "maintain_aspect_ratio",
-        motion_bucket_id: 127,
-        cond_aug: 0.02,
-      }
+    // Generate video using HeyGen API
+    const videoData = {
+      video_inputs: [
+        {
+          character: {
+            type: "avatar",
+            avatar_id: "default",
+            avatar_style: "normal",
+          },
+          voice: {
+            type: "text",
+            input_text: body.prompt,
+            voice_id: "default",
+          },
+        },
+      ],
+      title: "Generated Video",
+      test: true,
+      caption: false,
+      dimension: {
+        width: 1280,
+        height: 720,
+      },
+    }
+
+    const generateResponse = await fetch('https://api.heygen.com/v2/video/generate', {
+      method: 'POST',
+      headers: {
+        'X-Api-Key': HEYGEN_API_KEY,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(videoData),
     })
 
-    console.log("Video generation started:", prediction.id)
+    if (!generateResponse.ok) {
+      const errorText = await generateResponse.text()
+      console.error("Generation error:", generateResponse.status, errorText)
+      throw new Error(`Failed to generate video: ${generateResponse.status} - ${errorText}`)
+    }
+
+    const generateData = await generateResponse.json()
+    console.log("Video generation started:", generateData)
+
     return new Response(JSON.stringify({ 
-      predictionId: prediction.id,
-      status: prediction.status 
+      videoId: generateData.data?.video_id,
+      status: 'pending'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
