@@ -1,1 +1,16 @@
 project_id = "ksjfavhugvmcsbebmaki"
+
+[functions.generate-course]
+verify_jwt = true
+
+[functions.generate-course-website]
+verify_jwt = true
+
+[functions.generate-video]
+verify_jwt = true
+
+[functions.paypal-payment]
+verify_jwt = false
+
+[functions.telebirr-payment]
+verify_jwt = false
